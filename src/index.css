@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --font-inter: "Inter", sans-serif;
+  --font-space: "Space Grotesk", sans-serif;
+
+  --color-dark-bg: #0a0a0f;
+  --color-dark-surface: #13131c;
+  --color-dark-border: rgba(255, 255, 255, 0.1);
+  --color-cyan-glow: #00f5ff;
+  --color-purple-glow: #7c3aed;
+}
+
+@layer base {
+  html {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  body {
+    background-color: var(--color-dark-bg);
+    color: white;
+    font-family: var(--font-inter);
+    overflow-x: hidden;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-space);
+  }
+
+  ::selection {
+    background-color: var(--color-cyan-glow);
+    color: var(--color-dark-bg);
+  }
+}
+
+/* Added to hide scrollbar----------------------------- */
+body::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari */
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px rgba(0, 245, 255, 0.5), 0 0 20px rgba(0, 245, 255, 0.3);
+  }
+
+  .border-glow {
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.1), inset 0 0 10px rgba(0, 245, 255, 0.05);
+  }
+
+  .glass-effect {
+    background: rgba(19, 19, 28, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--color-dark-border);
+  }
+
+  .smooth-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
