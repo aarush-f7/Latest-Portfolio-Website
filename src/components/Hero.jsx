@@ -62,7 +62,7 @@ const Hero = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-[#fceabb] to-[#d4a843] transform scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-300 ease-in-out z-0"></div>
             </a>
             <a
-              href="/resume.pdf"
+              href="/AarushRajak_resume.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="px-8 py-4 border border-white/20 glass-effect font-space font-bold text-white uppercase tracking-wider hover:bg-white/10 hover:border-[#7c3aed] transition-all border-glow"
