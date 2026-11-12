@@ -3,68 +3,71 @@
 @theme {
   --font-inter: "Inter", sans-serif;
   --font-space: "Space Grotesk", sans-serif;
+  --font-syne: "Syne", sans-serif;
 
-  --color-dark-bg: #0a0a0f;
-  --color-dark-surface: #13131c;
-  --color-dark-border: rgba(255, 255, 255, 0.1);
-  --color-cyan-glow: #00f5ff;
-  --color-purple-glow: #7c3aed;
+  --color-bg: #07070c;
+  --color-surface: #0f0f18;
+  --color-violet: #8b5cf6;
+  --color-amber: #ffb347;
+  --color-text: #f4f4f8;
+  --color-muted: #9a9aae;
+  --color-line: rgba(255, 255, 255, 0.08);
 }
 
 @layer base {
   html {
     scrollbar-width: none;
     -ms-overflow-style: none;
+    cursor: none;
   }
 
   body {
-    background-color: var(--color-dark-bg);
-    color: white;
+    background-color: var(--color-bg);
+    color: var(--color-text);
     font-family: var(--font-inter);
+    font-weight: 400;
     overflow-x: hidden;
     overflow-y: scroll;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    cursor: none;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-space);
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-syne);
   }
 
   ::selection {
-    background-color: var(--color-cyan-glow);
-    color: var(--color-dark-bg);
+    background-color: var(--color-violet);
+    color: var(--color-bg);
+  }
+
+  /* Restore cursor on touch devices */
+  @media (pointer: coarse) {
+    html, body, a, button { cursor: auto; }
   }
 }
 
-/* Added to hide scrollbar----------------------------- */
 body::-webkit-scrollbar {
   display: none;
-  /* Chrome, Safari */
 }
 
 @layer utilities {
-  .text-glow {
-    text-shadow: 0 0 10px rgba(0, 245, 255, 0.5), 0 0 20px rgba(0, 245, 255, 0.3);
-  }
-
-  .border-glow {
-    box-shadow: 0 0 10px rgba(0, 245, 255, 0.1), inset 0 0 10px rgba(0, 245, 255, 0.05);
+  .text-gradient {
+    background: linear-gradient(135deg, var(--color-text) 0%, var(--color-violet) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .glass-effect {
-    background: rgba(19, 19, 28, 0.6);
+    background: rgba(15, 15, 24, 0.6);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--color-dark-border);
+    border: 1px solid var(--color-line);
   }
 
-  .smooth-transition {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
+  .font-syne { font-family: var(--font-syne); }
+  .font-space { font-family: var(--font-space); }
+  .font-inter { font-family: var(--font-inter); }
 }
