@@ -1,375 +1,371 @@
-
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 
+/* ─── Project data — unchanged: titles, descriptions, tech, links, images ─── */
 const projectsData = [
   {
     title: "Bug Issue Tracker",
-    description: "A comprehensive Jira-style project management tool with role-based access control, automated logging, and dashboard analytics.",
+    description:
+      "A comprehensive Jira-style project management tool with role-based access control, automated logging, and dashboard analytics.",
     tech: ["MongoDB", "Express", "React", "Node.js", "Tailwind"],
     github: "#",
     live: "https://bugs-issue-tracker-frontend.vercel.app",
     image: "/bug.png",
+    imageZoom: 1, 
+imagePosition: "center",
   },
   {
     title: "Interview-PAL",
-    description: "Modern music streaming application featuring authentication, real-time playback, custom UI with Framer Motion animations.",
+    description:
+      "Modern music streaming application featuring authentication, real-time playback, custom UI with Framer Motion animations.",
     tech: ["React", "Tailwind CSS", "Framer Motion", "Node.js"],
     github: "#",
     live: "https://interview-pal-frontend.vercel.app",
     image: "/PAL.png",
+    imageZoom: 1,
+    imagePosition: "center",
   },
   {
     title: "Dark Portfolio",
-    description: "Futuristic interactive portfolio website built with React, Vite, Framer Motion, and tsparticles for dynamic backgrounds.",
+    description:
+      "Futuristic interactive portfolio website built with React, Vite, Framer Motion, and tsparticles for dynamic backgrounds.",
     tech: ["React", "Vite", "Tailwind CSS", "Framer Motion"],
     github: "#",
     live: "#",
     image: "/Portfolio.png",
+    imageZoom: 1,
+    imagePosition: "10% center",
   },
   {
     title: "E-Commerce Dashboard",
-    description: "Full-featured admin dashboard with real-time sales analytics, inventory management, and customer insights powered by REST APIs.",
+    description:
+      "Full-featured admin dashboard with real-time sales analytics, inventory management, and customer insights powered by REST APIs.",
     tech: ["React", "Node.js", "MongoDB", "Chart.js", "Tailwind"],
     github: "#",
     live: "#",
     image: "/Dashboard.png",
+    imageZoom: 1,
+    imagePosition: "center",
   },
   {
     title: "Real-Time Chat App",
-    description: "Scalable messaging platform with end-to-end encryption, file sharing, typing indicators, and group chat functionality.",
+    description:
+      "Scalable messaging platform with end-to-end encryption, file sharing, typing indicators, and group chat functionality.",
     tech: ["Socket.io", "React", "Express", "MongoDB", "JWT"],
     github: "#",
     live: "#",
     image: "/Chat-app.png",
+    imageZoom: 1,
+    imagePosition: "center",
   },
   {
     title: "DevOps Pipeline Tool",
-    description: "CI/CD automation dashboard for managing deployments, monitoring uptime, and visualizing build pipelines across multiple environments.",
+    description:
+      "CI/CD automation dashboard for managing deployments, monitoring uptime, and visualizing build pipelines across multiple environments.",
     tech: ["Docker", "Node.js", "React", "PostgreSQL", "AWS"],
     github: "#",
     live: "#",
     image: "/Nixify.png",
+    imageZoom: 1,
+    imagePosition: "center",
   },
 ];
 
-const TOTAL = projectsData.length;
-
-const Projects = () => {
-  // activeIndex is a float for smooth interpolation
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeIndexRef = useRef(0);
-  const targetIndexRef = useRef(0);
-  const rafRef = useRef(null);
-  const sectionRef = useRef(null);
-  const isHovering = useRef(false);
-  const lastMouseY = useRef(0);
-  const accum = useRef(0); // accumulated mouse movement
-  const [isLocked, setIsLocked] = useState(false); // locked = center card focused, stop moving
-
-  // Smooth lerp animation loop
-  const animate = useCallback(() => {
-    const current = activeIndexRef.current;
-    const target = targetIndexRef.current;
-    const diff = target - current;
-    if (Math.abs(diff) > 0.001) {
-      activeIndexRef.current += diff * 0.08;
-      setActiveIndex(activeIndexRef.current);
-    } else {
-      activeIndexRef.current = target;
-      setActiveIndex(target);
-    }
-    rafRef.current = requestAnimationFrame(animate);
-  }, []);
-
-  useEffect(() => {
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [animate]);
-
-  // Mouse move on section: vertical movement controls carousel
-  const onMouseMove = (e) => {
-    if (!isHovering.current || isLocked) return;
-    const dy = e.clientY - lastMouseY.current;
-    lastMouseY.current = e.clientY;
-
-    // Accumulate movement, threshold per step
-    accum.current += dy;
-    const threshold = 40; // px of mouse movement = 1 card shift
-
-    if (accum.current > threshold) {
-      // mouse moved down → go to next (right)
-      targetIndexRef.current = Math.min(TOTAL - 1, Math.round(targetIndexRef.current) + 1);
-      accum.current = 0;
-    } else if (accum.current < -threshold) {
-      // mouse moved up → go to prev (left)
-      targetIndexRef.current = Math.max(0, Math.round(targetIndexRef.current) - 1);
-      accum.current = 0;
-    }
-  };
-
-  const onMouseEnter = (e) => {
-    isHovering.current = true;
-    lastMouseY.current = e.clientY;
-    accum.current = 0;
-  };
-
-  const onMouseLeave = () => {
-    isHovering.current = false;
-    accum.current = 0;
-  };
-
-  // Click on a side card to focus it
-  const focusCard = (index) => {
-    targetIndexRef.current = index;
-  };
-
-  // Compute per-card 3D style
-  const getCardStyle = (index) => {
-    const offset = index - activeIndexRef.current;
-    const absOffset = Math.abs(offset);
-
-    // Only show cards within range of 2
-    if (absOffset > 2.5) return { display: "none" };
-
-    const translateX = offset * 220;
-    const translateZ = -absOffset * 120;
-    const rotateY = offset * -18;
-    const scale = Math.max(0.72, 1 - absOffset * 0.13);
-    const blur = absOffset < 0.15 ? 0 : Math.min(6, absOffset * 4);
-    const opacity = Math.max(0.35, 1 - absOffset * 0.35);
-    const zIndex = Math.round(10 - absOffset * 3);
-    const brightness = absOffset < 0.15 ? 1 : Math.max(0.45, 1 - absOffset * 0.3);
-
-    return {
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      width: "300px",
-      transform: `
-        translate(-50%, -50%)
-        translateX(${translateX}px)
-        translateZ(${translateZ}px)
-        rotateY(${rotateY}deg)
-        scale(${scale})
-      `,
-      filter: `blur(${blur}px) brightness(${brightness})`,
-      opacity,
-      zIndex,
-      transition: "none",
-      cursor: absOffset < 0.4 ? "default" : "pointer",
-      willChange: "transform, filter, opacity",
-    };
-  };
-
+/* ─── Ghost button — unchanged from the previous version ─── */
+const GhostBtn = ({ href, children, color, hoverColor, disabled }) => {
+  const [over, setOver] = useState(false);
   return (
-    <section
-      id="projects"
-      ref={sectionRef}
-      style={{ padding: "6rem 0", position: "relative", zIndex: 10 }}
-    >
-      {/* Heading */}
-      <div style={{
-        marginBottom: "3rem",
-        padding: "0 3rem",
-        maxWidth: "80rem",
-        margin: "0 auto 3rem auto",
-        display: "flex",
+    <a
+      href={disabled ? undefined : href}
+      target={disabled ? undefined : "_blank"}
+      rel="noopener noreferrer"
+      onMouseEnter={() => setOver(true)}
+      onMouseLeave={() => setOver(false)}
+      style={{
+        display: "inline-flex",
         alignItems: "center",
-        gap: "1.5rem",
-      }}>
-        <h2 style={{
-          fontSize: "clamp(2rem, 4vw, 3rem)",
-          fontWeight: "700",
-          fontFamily: "Space Grotesk, sans-serif",
-          textTransform: "uppercase",
-          whiteSpace: "nowrap",
-          color: "white",
-        }}>
-          Selected Works
-        </h2>
-        <div style={{
-          height: "1px", flexGrow: 1,
-          background: "linear-gradient(to right, rgba(124,58,237,0.5), transparent)",
-        }} />
-      </div>
-
-      {/* Hint */}
-      <div style={{
-        textAlign: "center", marginBottom: "1rem",
-        fontFamily: "Space Grotesk, sans-serif",
-        fontSize: "12px", letterSpacing: "0.2em",
-        color: "#4b5563", textTransform: "uppercase",
-      }}>
-        <span style={{ color: "#00f5ff" }}>↑</span> Move mouse up/down to browse <span style={{ color: "#00f5ff" }}>↓</span>
-      </div>
-
-      {/* 3D Carousel Stage */}
-      <div
-        onMouseMove={onMouseMove}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        style={{
-          position: "relative",
-          height: "520px",
-          perspective: "1200px",
-          perspectiveOrigin: "50% 50%",
-          transformStyle: "preserve-3d",
-          overflow: "visible",
-        }}
-      >
-        {projectsData.map((project, index) => (
-          <div
-            key={index}
-            style={getCardStyle(index)}
-            onClick={() => focusCard(index)}
-            onMouseEnter={() => {
-              // If this card is the center card, lock the carousel
-              if (Math.abs(index - activeIndexRef.current) < 0.4) {
-                setIsLocked(true);
-              }
-            }}
-            onMouseLeave={() => {
-              setIsLocked(false);
-              accum.current = 0;
-            }}
-          >
-            <CardInner project={project} index={index} isFocused={Math.abs(index - activeIndexRef.current) < 0.3} />
-          </div>
-        ))}
-      </div>
-
-      {/* Dot indicators */}
-      <div style={{
-        display: "flex", justifyContent: "center",
-        gap: "8px", marginTop: "2rem",
-      }}>
-        {projectsData.map((_, i) => {
-          const dist = Math.abs(i - activeIndex);
-          return (
-            <div
-              key={i}
-              onClick={() => focusCard(i)}
-              style={{
-                width: dist < 0.3 ? "24px" : "8px",
-                height: "8px",
-                borderRadius: "4px",
-                background: dist < 0.3 ? "#00f5ff" : "rgba(255,255,255,0.2)",
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-              }}
-            />
-          );
-        })}
-      </div>
-    </section>
+        gap: "6px",
+        fontSize: "11.5px",
+        fontFamily: "'Space Grotesk', sans-serif",
+        fontWeight: "600",
+        letterSpacing: "0.05em",
+        color: disabled ? "rgba(255,255,255,0.2)" : over ? hoverColor : color,
+        textDecoration: "none",
+        padding: "5px 14px",
+        borderRadius: "7px",
+        border: `1px solid ${
+          disabled ? "rgba(255,255,255,0.06)" : over ? hoverColor : "rgba(255,255,255,0.12)"
+        }`,
+        background: over && !disabled ? `${hoverColor}14` : "transparent",
+        transition: "all 0.25s ease",
+        cursor: disabled ? "not-allowed" : "pointer",
+        pointerEvents: disabled ? "none" : "auto",
+      }}
+    >
+      {children}
+    </a>
   );
 };
 
-// Separate card inner component to keep it clean
-const CardInner = ({ project, index, isFocused }) => (
-  <div style={{
-    width: "300px",
-    background: "rgba(13,13,20,0.95)",
-    border: `1px solid ${isFocused ? "rgba(0,245,255,0.5)" : "rgba(255,255,255,0.08)"}`,
-    borderRadius: "16px",
-    overflow: "hidden",
-    display: "flex",
-    flexDirection: "column",
-    boxShadow: isFocused
-      ? "0 30px 80px rgba(0,0,0,0.6), 0 0 30px rgba(0,245,255,0.1)"
-      : "0 20px 60px rgba(0,0,0,0.5)",
-    transition: "border-color 0.4s, box-shadow 0.4s",
-  }}>
-    {/* Image */}
-    <div style={{ height: "160px", overflow: "hidden", position: "relative", flexShrink: 0 }}>
-      <img
-        src={project.image}
-        alt={project.title}
-        draggable={false}
-        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-      />
-      {/* Focused = interactable badge */}
-      {isFocused && (
-        <div style={{
-          position: "absolute", top: "10px", right: "10px",
-          background: "rgba(0,245,255,0.15)", backdropFilter: "blur(8px)",
-          border: "1px solid rgba(0,245,255,0.4)",
-          color: "#00f5ff", fontSize: "10px",
-          fontFamily: "Space Grotesk, sans-serif",
-          fontWeight: "700", letterSpacing: "0.12em",
-          padding: "3px 9px", borderRadius: "4px",
-        }}>
-          ✦ HOVER TO INTERACT
+/* ─── One project row — its own image sits beside its own content ─── */
+const ProjectRow = ({ project, index, total }) => {
+  const isLive = project.live !== "#";
+  const reversed = index % 2 === 1; // alternate image left/right
+  const [swinging, setSwinging] = useState(false);
+  const swingTimeout = useRef(null);
+
+  // Hover-triggered pendulum swing + glow, local to THIS project's own image.
+  // Double rAF forces the class off then back on so re-hovering restarts it.
+  const handleEnter = useCallback(() => {
+    setSwinging(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setSwinging(true));
+    });
+    clearTimeout(swingTimeout.current);
+    swingTimeout.current = setTimeout(() => setSwinging(false), 950);
+  }, []);
+
+  useEffect(() => () => clearTimeout(swingTimeout.current), []);
+
+  return (
+    <div
+      onMouseEnter={handleEnter}
+      className="project-row"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "3.5rem",
+        alignItems: "center",
+        padding: "3.5rem 0",
+        borderTop: index === 0 ? "none" : "1px solid rgba(255,255,255,0.08)",
+        cursor: "default",
+      }}
+    >
+      {/* This project's own image */}
+      <div
+        className={`sticky-frame${swinging ? " swing" : ""}`}
+        style={{
+          order: reversed ? 2 : 1,
+          position: "sticky",
+          top: "6rem",
+          borderRadius: "16px",
+          overflow: "hidden",
+          border: "1px solid rgba(255,255,255,0.08)",
+          aspectRatio: "4 / 3",
+          boxShadow: "0 30px 70px rgba(0,0,0,0.5)",
+        }}
+      >
+                <img
+          src={project.image}
+          alt={project.title}
+          draggable={false}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: project.imagePosition || "center",
+            transform: `scale(${project.imageZoom || 1})`,
+            display: "block",
+          }}
+        />
+      </div>
+
+      {/* This project's own content */}
+      <div style={{ order: reversed ? 1 : 2 }}>
+        <div
+          style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: "11px",
+            letterSpacing: "0.18em",
+            color: "#00f5ff",
+            marginBottom: "0.9rem",
+          }}
+        >
+          {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </div>
-      )}
-      {/* Number badge */}
-      <div style={{
-        position: "absolute", top: "10px", left: "10px",
-        background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)",
-        border: "1px solid rgba(0,245,255,0.4)",
-        color: "#00f5ff", fontSize: "11px",
-        fontFamily: "Space Grotesk, sans-serif",
-        fontWeight: "700", letterSpacing: "0.15em",
-        padding: "3px 9px", borderRadius: "4px",
-      }}>
-        {String(index + 1).padStart(2, "0")}
+
+        <h3
+          style={{
+            fontSize: "clamp(1.6rem, 3vw, 2.1rem)",
+            fontWeight: "700",
+            fontFamily: "'Space Grotesk', sans-serif",
+            color: "white",
+            marginBottom: "1rem",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {project.title}
+        </h3>
+
+        <p
+          style={{
+            color: "#9ca3af",
+            fontSize: "0.95rem",
+            lineHeight: "1.75",
+            maxWidth: "42ch",
+            marginBottom: "1.4rem",
+          }}
+        >
+          {project.description}
+        </p>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.6rem" }}>
+          {project.tech.map((t, i) => (
+            <span
+              key={i}
+              style={{
+                fontSize: "10px",
+                fontFamily: "'Space Grotesk', sans-serif",
+                background: "rgba(0,245,255,0.07)",
+                color: "#00f5ff",
+                padding: "4px 11px",
+                borderRadius: "5px",
+                border: "1px solid rgba(0,245,255,0.18)",
+                letterSpacing: "0.05em",
+              }}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", gap: "0.9rem" }}>
+          <GhostBtn href={project.github} color="#9ca3af" hoverColor="#00f5ff">
+            <FaGithub style={{ fontSize: "13px" }} />
+            GitHub
+          </GhostBtn>
+          <GhostBtn href={project.live} color="#9ca3af" hoverColor="#7c3aed" disabled={!isLive}>
+            <FaExternalLinkAlt style={{ fontSize: "11px" }} />
+            Live Demo
+          </GhostBtn>
+        </div>
       </div>
     </div>
+  );
+};
 
-    {/* Text content */}
-    <div style={{ padding: "1.2rem", display: "flex", flexDirection: "column", flexGrow: 1 }}>
-      <h3 style={{
-        fontSize: "1rem", fontWeight: "700",
-        fontFamily: "Space Grotesk, sans-serif",
-        color: "white", marginBottom: "0.5rem",
-      }}>
-        {project.title}
-      </h3>
+/* ─── Main Projects section ─── */
+const Projects = () => {
+  return (
+    <>
+      <style>{`
+        @keyframes pendulumSwing {
+          0%   { transform: rotate(-9deg)  scale(0.96); }
+          25%  { transform: rotate(6deg)   scale(1.025); }
+          45%  { transform: rotate(-4deg)  scale(0.995); }
+          65%  { transform: rotate(2.2deg) scale(1.008); }
+          85%  { transform: rotate(-1deg)  scale(0.999); }
+          100% { transform: rotate(0deg)   scale(1); }
+        }
+        @keyframes glowPulse {
+          0%   { box-shadow: 0 30px 70px rgba(0,0,0,0.5), 0 0 0 rgba(0,245,255,0); }
+          40%  { box-shadow: 0 30px 70px rgba(0,0,0,0.5), 0 0 70px rgba(0,245,255,0.55), 0 0 32px rgba(124,58,237,0.4); }
+          100% { box-shadow: 0 30px 70px rgba(0,0,0,0.5), 0 0 28px rgba(0,245,255,0.26); }
+        }
+        @keyframes sheen {
+          0%   { background-position: -60% -60%; opacity: 1; }
+          100% { background-position: 130% 130%; opacity: 0; }
+        }
+        .sticky-frame { transform-origin: 50% 0%; position: sticky; }
+        .sticky-frame::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: 4;
+          pointer-events: none;
+          background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.16) 47%, transparent 62%);
+          background-size: 250% 250%;
+          background-position: -60% -60%;
+          opacity: 0;
+        }
+        .sticky-frame.swing {
+          animation: pendulumSwing 0.95s cubic-bezier(.32,1.6,.55,1) both,
+                     glowPulse 0.95s ease both;
+        }
+        .sticky-frame.swing::before {
+          opacity: 1;
+          animation: sheen 0.95s ease;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .sticky-frame.swing { animation: none !important; }
+          .sticky-frame.swing::before { display: none; }
+        }
+        @media (max-width: 860px) {
+          .project-row { grid-template-columns: 1fr !important; gap: 1.5rem !important; }
+          .project-row .sticky-frame { order: 1 !important; position: relative !important; top: 0 !important; }
+          .project-row > div:last-child { order: 2 !important; }
+        }
+      `}</style>
 
-      <p style={{
-        color: "#9ca3af", fontSize: "0.78rem",
-        lineHeight: "1.6", marginBottom: "1rem", flexGrow: 1,
-      }}>
-        {project.description}
-      </p>
-
-      {/* Tech tags */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem", marginBottom: "1rem" }}>
-        {project.tech.map((t, i) => (
-          <span key={i} style={{
-            fontSize: "10px", fontFamily: "Space Grotesk, sans-serif",
-            background: "rgba(0,245,255,0.07)", color: "#00f5ff",
-            padding: "2px 8px", borderRadius: "4px",
-            border: "1px solid rgba(0,245,255,0.15)",
-          }}>
-            {t}
-          </span>
-        ))}
-      </div>
-
-      {/* Links */}
-      <div style={{
-        display: "flex", gap: "1rem",
-        paddingTop: "0.8rem", borderTop: "1px solid rgba(255,255,255,0.06)",
-      }}>
-        <a href={project.github} target="_blank" rel="noopener noreferrer"
-          style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontFamily: "Space Grotesk, sans-serif", color: "#9ca3af", textDecoration: "none" }}
-          onMouseEnter={e => e.currentTarget.style.color = "#00f5ff"}
-          onMouseLeave={e => e.currentTarget.style.color = "#9ca3af"}
+      <section id="projects" style={{ padding: "6rem 0", position: "relative", zIndex: 10 }}>
+        {/* Heading — unchanged */}
+        <div
+          style={{
+            marginBottom: "1rem",
+            padding: "0 3rem",
+            maxWidth: "80rem",
+            margin: "0 auto 2.5rem auto",
+            display: "flex",
+            alignItems: "center",
+            gap: "1.5rem",
+          }}
         >
-          <FaGithub /> GitHub
-        </a>
-        <a href={project.live} target="_blank" rel="noopener noreferrer"
-          style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontFamily: "Space Grotesk, sans-serif", color: "#9ca3af", textDecoration: "none" }}
-          onMouseEnter={e => e.currentTarget.style.color = "#7c3aed"}
-          onMouseLeave={e => e.currentTarget.style.color = "#9ca3af"}
-        >
-          <FaExternalLinkAlt /> Live Demo
-        </a>
-      </div>
-    </div>
-  </div>
-);
+          <h2
+            style={{
+              fontSize: "clamp(2rem, 4vw, 3rem)",
+              fontWeight: "700",
+              fontFamily: "'Space Grotesk', sans-serif",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+              color: "white",
+            }}
+          >
+            Selected Works
+          </h2>
+          <div
+            style={{
+              height: "1px",
+              flexGrow: 1,
+              background: "linear-gradient(to right, rgba(124,58,237,0.5), transparent)",
+            }}
+          />
+        </div>
+
+        {/* Hint pill */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "2.5rem" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "6px 18px",
+              borderRadius: "100px",
+              background: "rgba(0,245,255,0.05)",
+              border: "1px solid rgba(0,245,255,0.15)",
+              color: "#4b5563",
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "11px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+            }}
+          >
+            <span style={{ color: "#00f5ff" }}>↕</span>
+            Scroll to Explore
+            <span style={{ width: "1px", height: "12px", background: "rgba(255,255,255,0.12)" }} />
+            <span style={{ color: "#00f5ff" }}>✧</span>
+            Hover to Preview
+          </div>
+        </div>
+
+        {/* Each project — its own image beside its own content */}
+        <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 3rem" }}>
+          {projectsData.map((project, i) => (
+            <ProjectRow key={i} project={project} index={i} total={projectsData.length} />
+          ))}
+        </div>
+      </section>
+    </>
+  );
+};
 
 export default Projects;

@@ -104,7 +104,7 @@ const Hero = () => {
 
             {/* Placeholder bg — replace src with your actual photo */}
             <img
-              src="/New-bg.png"
+              src="/std-img.jpeg"
               alt="Aarush Rajak"
               // onError={(e) => { e.target.style.display = "none"; }}
               style={{
@@ -119,7 +119,7 @@ const Hero = () => {
               }}
             />
 
-            {/* Fallback placeholder shown when no image */}
+            {/* Fallback placeholder */}
             <div style={{
               position: "absolute", inset: 0,
               background: "linear-gradient(160deg, #13131c 0%, #0a0a0f 100%)",
