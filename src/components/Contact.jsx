@@ -1,145 +1,498 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { FaGithub, FaLinkedin, FaEnvelope, FaMapMarkerAlt, FaPhoneAlt } from "react-icons/fa";
+import { useState, useRef, useEffect } from "react";
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
+import {
+  FaGithub,
+  FaLinkedin,
+  FaEnvelope,
+  FaMapMarkerAlt,
+  FaPhoneAlt,
+  FaCopy,
+  FaCheck,
+} from "react-icons/fa";
+import emailjs from "@emailjs/browser";
 
 const Contact = () => {
+  const sectionRef = useRef(null);
+  const headlineRef = useRef(null);
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | sending | success | error
+  const [errorMessage, setErrorMessage] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const handler = (e) => setReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // Headline scroll-linked animation
+  const { scrollYProgress: headProgress } = useScroll({
+    target: headlineRef,
+    offset: ["start end", "center center"],
+  });
+
+  const springConfig = { stiffness: 70, damping: 20 };
+  const line1RawX = useTransform(headProgress, [0, 1], [-160, 0]);
+  const line2RawX = useTransform(headProgress, [0, 1], [160, 0]);
+  const line1X = useSpring(line1RawX, springConfig);
+  const line2X = useSpring(line2RawX, springConfig);
+  const headOpacity = useSpring(useTransform(headProgress, [0, 0.7], [0, 1]), springConfig);
+  const headScale = useSpring(useTransform(headProgress, [0, 1], [0.94, 1]), springConfig);
+
+  // Cards scroll-linked convergence
+  const { scrollYProgress: cardsProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "center center"],
+  });
+
+  const cardLeftRawX = useTransform(cardsProgress, [0, 1], [-160, 0]);
+  const cardRightRawX = useTransform(cardsProgress, [0, 1], [160, 0]);
+  const cardLeftX = useSpring(cardLeftRawX, springConfig);
+  const cardRightX = useSpring(cardRightRawX, springConfig);
+  const cardsOpacity = useSpring(useTransform(cardsProgress, [0, 0.7], [0, 1]), springConfig);
+  const cardsScale = useSpring(useTransform(cardsProgress, [0, 1], [0.94, 1]), springConfig);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (status !== "idle") setStatus("idle");
   };
 
-  const handleSubmit = (e) => {
+  const copyEmail = async () => {
+    const email = "rajakaarush627@gmail.com";
+    try {
+      await navigator.clipboard.writeText(email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simple mock submission since no actual EmailJS keys are provided
     setStatus("sending");
-    setTimeout(() => {
+    setErrorMessage("");
+
+    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+    const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+    if (!serviceId || !templateId || !publicKey) {
+      // Configuration notice if keys are missing from environment
+      setStatus("error");
+      setErrorMessage(
+        "EmailJS credentials missing in .env.local. Please reach out directly to rajakaarush627@gmail.com."
+      );
+      return;
+    }
+
+    try {
+      await emailjs.send(
+        serviceId,
+        templateId,
+        {
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          reply_to: formData.email,
+        },
+        publicKey
+      );
       setStatus("success");
       setFormData({ name: "", email: "", message: "" });
-      setTimeout(() => setStatus(""), 3000);
-    }, 1500);
+      setTimeout(() => setStatus("idle"), 5000);
+    } catch (err) {
+      console.error("EmailJS Error:", err);
+      setStatus("error");
+      setErrorMessage(
+        err?.text || "Transmission failed. Please email rajakaarush627@gmail.com directly."
+      );
+    }
   };
 
   return (
-    <section id="contact" className="py-24 px-6 md:px-12 max-w-7xl mx-auto z-10 relative">
-      <div className="mb-16 flex flex-col items-center text-center">
-        <h2 className="text-4xl md:text-5xl font-bold font-space uppercase mb-4 text-glow">Initiate Connection</h2>
-        <p className="text-gray-400 max-w-2xl font-inter">
-          Currently open for new opportunities. Whether you have a question or just want to say hi,
-          I'll try my best to get back to you!
-        </p>
+    <section
+      id="contact"
+      ref={sectionRef}
+      className="py-28 px-6 md:px-12 max-w-7xl mx-auto z-10 relative overflow-hidden"
+    >
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {copied && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            transition={{ duration: 0.25 }}
+            className="fixed bottom-8 right-8 z-50 flex items-center gap-2 px-5 py-3 rounded-xl font-space text-xs font-semibold uppercase tracking-wider glass-effect text-white shadow-2xl"
+            style={{
+              borderColor: "var(--color-violet)",
+              background: "rgba(15, 15, 24, 0.95)",
+            }}
+          >
+            <FaCheck style={{ color: "var(--color-amber)" }} />
+            <span>Email copied to clipboard!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Headline Scene: "LET'S BUILD SOMETHING" split into two lines entering from opposite sides */}
+      <div ref={headlineRef} className="mb-20 text-center flex flex-col items-center">
+        <div className="overflow-hidden">
+          <motion.h2
+            style={
+              reducedMotion || isMobile
+                ? { opacity: headOpacity }
+                : { x: line1X, opacity: headOpacity, scale: headScale }
+            }
+            className="font-syne font-extrabold text-4xl sm:text-6xl md:text-7xl lg:text-8xl uppercase tracking-tight text-white leading-none"
+          >
+            LET'S BUILD
+          </motion.h2>
+        </div>
+        <div className="overflow-hidden mt-1">
+          <motion.h2
+            style={
+              reducedMotion || isMobile
+                ? { opacity: headOpacity }
+                : { x: line2X, opacity: headOpacity, scale: headScale }
+            }
+            className="font-syne font-extrabold text-4xl sm:text-6xl md:text-7xl lg:text-8xl uppercase tracking-tight text-gradient leading-none"
+          >
+            SOMETHING
+          </motion.h2>
+        </div>
+        <motion.p
+          style={{ opacity: headOpacity }}
+          className="mt-6 font-inter font-light text-base md:text-lg max-w-xl text-center"
+          style={{ color: "var(--color-muted)" }}
+        >
+          Have a visionary project in mind or looking to augment your engineering team? Let's
+          collaborate and engineer an exceptional reality.
+        </motion.p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
+      {/* Main Grid: Info on Left, Form on Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 max-w-6xl mx-auto items-start">
+        {/* Contact Info Card (enters from left) */}
         <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="flex flex-col gap-8"
+          style={
+            reducedMotion || isMobile
+              ? { opacity: cardsOpacity }
+              : { x: cardLeftX, opacity: cardsOpacity, scale: cardsScale }
+          }
+          className="lg:col-span-5 flex flex-col gap-6"
         >
-          <div className="glass-effect p-8 rounded-xl border border-white/5 flex flex-col gap-6">
-            <h3 className="text-2xl font-space font-bold border-b border-white/10 pb-4">Contact Info</h3>
-
-            <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
-              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-[#00f5ff] text-xl">
-                <FaEnvelope />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-space text-gray-500 uppercase uppercase">Email</span>
-                <a href="mailto:rajakaarush627@gmail.com" className="font-inter">rajakaarush627@gmail.com</a>
-              </div>
+          {/* Subtle persistent drift loop */}
+          <motion.div
+            animate={
+              reducedMotion
+                ? {}
+                : {
+                    y: [0, -6, 0],
+                  }
+            }
+            transition={{
+              duration: 7.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="glass-effect p-8 sm:p-9 rounded-2xl border border-white/10 flex flex-col gap-6"
+            style={{
+              background: "radial-gradient(ellipse at top left, rgba(20,20,32,0.8), rgba(10,10,18,0.9))",
+            }}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <h3 className="font-syne font-bold text-xl uppercase text-white tracking-wide">
+                Direct Channels
+              </h3>
+              <span
+                className="font-space text-[10px] tracking-widest uppercase font-semibold"
+                style={{ color: "var(--color-amber)" }}
+              >
+                // AVAILABLE
+              </span>
             </div>
 
-            <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
-              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-[#7c3aed] text-xl">
+            {/* Email with copy button */}
+            <div className="flex items-center justify-between gap-3 group">
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center text-lg"
+                  style={{
+                    background: "rgba(139,92,246,0.12)",
+                    color: "var(--color-violet)",
+                    border: "1px solid rgba(139,92,246,0.3)",
+                  }}
+                >
+                  <FaEnvelope />
+                </div>
+                <div className="flex flex-col">
+                  <span
+                    className="text-[10px] font-space tracking-widest uppercase"
+                    style={{ color: "var(--color-muted)" }}
+                  >
+                    Email
+                  </span>
+                  <a
+                    href="mailto:rajakaarush627@gmail.com"
+                    className="font-inter text-sm text-white hover:text-[var(--color-violet)] transition-colors break-all"
+                  >
+                    rajakaarush627@gmail.com
+                  </a>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={copyEmail}
+                title="Copy email to clipboard"
+                className="p-2.5 rounded-lg glass-effect hover:border-[var(--color-amber)] text-white hover:text-[var(--color-amber)] transition-all flex items-center justify-center shrink-0 cursor-pointer"
+                style={{ borderColor: "var(--color-line)" }}
+              >
+                {copied ? <FaCheck className="text-xs" /> : <FaCopy className="text-xs" />}
+              </button>
+            </div>
+
+            {/* Phone */}
+            <div className="flex items-center gap-4">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-lg"
+                style={{
+                  background: "rgba(255,179,71,0.12)",
+                  color: "var(--color-amber)",
+                  border: "1px solid rgba(255,179,71,0.3)",
+                }}
+              >
                 <FaPhoneAlt />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-space text-gray-500 uppercase">Phone</span>
-                <a href="tel:7489336575" className="font-inter">7489336575</a>
+                <span
+                  className="text-[10px] font-space tracking-widest uppercase"
+                  style={{ color: "var(--color-muted)" }}
+                >
+                  Phone / WhatsApp
+                </span>
+                <a
+                  href="tel:7489336575"
+                  className="font-inter text-sm text-white hover:text-[var(--color-amber)] transition-colors"
+                >
+                  +91 7489336575
+                </a>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
-              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-[#00f5ff] text-xl">
+            {/* Location */}
+            <div className="flex items-center gap-4">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-lg"
+                style={{
+                  background: "rgba(139,92,246,0.12)",
+                  color: "var(--color-violet)",
+                  border: "1px solid rgba(139,92,246,0.3)",
+                }}
+              >
                 <FaMapMarkerAlt />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-space text-gray-500 uppercase">Location</span>
-                <span className="font-inter">Jabalpur, India</span>
+                <span
+                  className="text-[10px] font-space tracking-widest uppercase"
+                  style={{ color: "var(--color-muted)" }}
+                >
+                  Base Location
+                </span>
+                <span className="font-inter text-sm text-white">Jabalpur, MP, India</span>
               </div>
             </div>
-          </div>
 
-          <div className="flex gap-4">
-            <a href="https://github.com/aarush-f7" className="w-14 h-14 glass-effect flex items-center justify-center rounded-xl text-2xl hover:bg-[#00f5ff]/10 hover:text-[#00f5ff] hover:border-[#00f5ff]/50 transition-all">
-              <FaGithub />
-            </a>
-            <a href="https://www.linkedin.com/in/aarushrajak77/" className="w-14 h-14 glass-effect flex items-center justify-center rounded-xl text-2xl hover:bg-[#7c3aed]/10 hover:text-[#7c3aed] hover:border-[#7c3aed]/50 transition-all">
-              <FaLinkedin />
-            </a>
-          </div>
+            {/* Socials */}
+            <div className="pt-2 border-t border-white/10 flex gap-3">
+              <a
+                href="https://github.com/aarush-f7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3 px-4 glass-effect rounded-xl font-space text-xs tracking-wider uppercase font-semibold text-white flex items-center justify-center gap-2 hover:border-[var(--color-violet)] hover:text-[var(--color-violet)] transition-all"
+              >
+                <FaGithub className="text-base" /> GitHub
+              </a>
+              <a
+                href="https://www.linkedin.com/in/aarushrajak77/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3 px-4 glass-effect rounded-xl font-space text-xs tracking-wider uppercase font-semibold text-white flex items-center justify-center gap-2 hover:border-[var(--color-amber)] hover:text-[var(--color-amber)] transition-all"
+              >
+                <FaLinkedin className="text-base" /> LinkedIn
+              </a>
+            </div>
+          </motion.div>
         </motion.div>
 
+        {/* Real Form (enters from right) */}
         <motion.form
-          initial={{ opacity: 0, x: 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
           onSubmit={handleSubmit}
-          className="glass-effect p-8 rounded-xl border border-white/5 flex flex-col gap-6"
+          style={
+            reducedMotion || isMobile
+              ? { opacity: cardsOpacity }
+              : { x: cardRightX, opacity: cardsOpacity, scale: cardsScale }
+          }
+          className="lg:col-span-7 glass-effect p-8 sm:p-9 rounded-2xl border border-white/10 flex flex-col gap-5 relative"
+          style={{
+            background: "radial-gradient(ellipse at top right, rgba(20,20,32,0.8), rgba(10,10,18,0.9))",
+          }}
         >
-          <div className="flex flex-col gap-2">
-            <label htmlFor="name" className="text-sm font-space text-gray-400">YOUR NAME</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="bg-black/50 border border-white/10 rounded-lg p-3 text-white font-inter focus:outline-none focus:border-[#00f5ff] transition-colors"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-sm font-space text-gray-400">YOUR EMAIL</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="bg-black/50 border border-white/10 rounded-lg p-3 text-white font-inter focus:outline-none focus:border-[#7c3aed] transition-colors"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="message" className="text-sm font-space text-gray-400">MESSAGE</label>
-            <textarea
-              id="message"
-              name="message"
-              rows="4"
-              value={formData.message}
-              onChange={handleChange}
-              required
-              className="bg-black/50 border border-white/10 rounded-lg p-3 text-white font-inter focus:outline-none focus:border-[#00f5ff] transition-colors resize-none"
-            ></textarea>
-          </div>
-
-          <button
-            type="submit"
-            disabled={status === "sending"}
-            className="mt-2 group relative py-4 bg-white text-black font-space font-bold uppercase tracking-wider overflow-hidden hover:scale-[1.02] transition-transform w-full rounded-lg"
+          {/* Subtle persistent drift loop */}
+          <motion.div
+            animate={
+              reducedMotion
+                ? {}
+                : {
+                    y: [0, -6, 0],
+                  }
+            }
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="flex flex-col gap-5 w-full"
           >
-            <span className="relative z-10">
-              {status === "sending" ? "Transmitting..." : status === "success" ? "Message Received" : "Send Message"}
-            </span>
-            <div className="absolute inset-0 bg-[#00f5ff] transform scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-300 ease-in-out z-0"></div>
-          </button>
+            <div className="border-b border-white/10 pb-4">
+              <h3 className="font-syne font-bold text-xl uppercase text-white tracking-wide">
+                Send a Dispatch
+              </h3>
+              <p
+                className="font-inter text-xs font-light mt-1"
+                style={{ color: "var(--color-muted)" }}
+              >
+                Fill out the brief below and your message will land directly in my inbox.
+              </p>
+            </div>
+
+            {/* Name */}
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="name"
+                className="text-[11px] font-space tracking-widest uppercase font-semibold"
+                style={{ color: "var(--color-muted)" }}
+              >
+                Your Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                placeholder="Aarush / Recruiter / Founder"
+                className="w-full bg-black/40 border rounded-xl p-3.5 text-sm text-white font-inter placeholder:text-gray-600 focus:outline-none transition-colors"
+                style={{
+                  borderColor: "var(--color-line)",
+                }}
+              />
+            </div>
+
+            {/* Email */}
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="email"
+                className="text-[11px] font-space tracking-widest uppercase font-semibold"
+                style={{ color: "var(--color-muted)" }}
+              >
+                Your Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                placeholder="name@company.com"
+                className="w-full bg-black/40 border rounded-xl p-3.5 text-sm text-white font-inter placeholder:text-gray-600 focus:outline-none transition-colors"
+                style={{
+                  borderColor: "var(--color-line)",
+                }}
+              />
+            </div>
+
+            {/* Message */}
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="message"
+                className="text-[11px] font-space tracking-widest uppercase font-semibold"
+                style={{ color: "var(--color-muted)" }}
+              >
+                Message
+              </label>
+              <textarea
+                id="message"
+                name="message"
+                rows="4"
+                value={formData.message}
+                onChange={handleChange}
+                required
+                placeholder="Tell me about your vision, technical requirements, or role..."
+                className="w-full bg-black/40 border rounded-xl p-3.5 text-sm text-white font-inter placeholder:text-gray-600 focus:outline-none transition-colors resize-none"
+                style={{
+                  borderColor: "var(--color-line)",
+                }}
+              />
+            </div>
+
+            {/* Status alerts */}
+            {status === "success" && (
+              <div
+                className="p-4 rounded-xl border font-space text-xs tracking-wider uppercase font-semibold flex items-center gap-2"
+                style={{
+                  background: "rgba(139,92,246,0.1)",
+                  borderColor: "var(--color-violet)",
+                  color: "var(--color-text)",
+                }}
+              >
+                <FaCheck style={{ color: "var(--color-amber)" }} />
+                <span>Message transmitted successfully! I will respond promptly.</span>
+              </div>
+            )}
+
+            {status === "error" && (
+              <div
+                className="p-4 rounded-xl border font-space text-xs tracking-wider uppercase font-medium"
+                style={{
+                  background: "rgba(239,68,68,0.1)",
+                  borderColor: "rgba(239,68,68,0.4)",
+                  color: "#fca5a5",
+                }}
+              >
+                {errorMessage}
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={status === "sending"}
+              className="mt-2 group relative py-4 px-8 rounded-xl font-syne font-bold uppercase tracking-wider text-sm overflow-hidden transition-all duration-300 hover:scale-[1.02] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed text-[#07070c]"
+              style={{
+                background: "var(--color-amber)",
+              }}
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {status === "sending" ? "Transmitting Signal..." : "Transmit Message"}
+              </span>
+            </button>
+          </motion.div>
         </motion.form>
       </div>
     </section>
