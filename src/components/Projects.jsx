@@ -1,29 +1,31 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+  useMotionValue,
+} from "framer-motion";
 import { FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 
-/* ─── Project data — unchanged: titles, descriptions, tech, links, images ─── */
 const projectsData = [
   {
     title: "Bug Issue Tracker",
     description:
-      "A comprehensive Jira-style project management tool with role-based access control, automated logging, and dashboard analytics.",
+      "A comprehensive Jira-style project management tool with role-based access control (Manager / Tester / Developer), JWT auth, 30+ REST APIs, automated logging, and GitHub Actions CI/CD.",
     tech: ["MongoDB", "Express", "React", "Node.js", "Tailwind"],
     github: "#",
     live: "https://bugs-issue-tracker-frontend.vercel.app",
     image: "/bug.png",
-    imageZoom: 1, 
-imagePosition: "center",
   },
   {
     title: "Interview-PAL",
     description:
-      "Modern music streaming application featuring authentication, real-time playback, custom UI with Framer Motion animations.",
-    tech: ["React", "Tailwind CSS", "Framer Motion", "Node.js"],
+      "AI-powered mock interview platform: upload your resume (PDF parsing), get role-specific questions and feedback from the Gemini API, with secure cookie-based JWT auth.",
+    tech: ["React", "Node.js", "Express", "MongoDB", "Gemini API"],
     github: "#",
     live: "https://interview-pal-frontend.vercel.app",
     image: "/PAL.png",
-    imageZoom: 1,
-    imagePosition: "center",
   },
   {
     title: "Dark Portfolio",
@@ -33,8 +35,6 @@ imagePosition: "center",
     github: "#",
     live: "#",
     image: "/Portfolio.png",
-    imageZoom: 1,
-    imagePosition: "10% center",
   },
   {
     title: "E-Commerce Dashboard",
@@ -44,8 +44,6 @@ imagePosition: "center",
     github: "#",
     live: "#",
     image: "/Dashboard.png",
-    imageZoom: 1,
-    imagePosition: "center",
   },
   {
     title: "Real-Time Chat App",
@@ -55,8 +53,6 @@ imagePosition: "center",
     github: "#",
     live: "#",
     image: "/Chat-app.png",
-    imageZoom: 1,
-    imagePosition: "center",
   },
   {
     title: "DevOps Pipeline Tool",
@@ -66,305 +62,394 @@ imagePosition: "center",
     github: "#",
     live: "#",
     image: "/Nixify.png",
-    imageZoom: 1,
-    imagePosition: "center",
   },
 ];
 
-/* ─── Ghost button — unchanged from the previous version ─── */
-const GhostBtn = ({ href, children, color, hoverColor, disabled }) => {
-  const [over, setOver] = useState(false);
+/* ── Interactive 3D Frame with Spotlight Sheen & Parallax ── */
+const ImageFrame = ({ project, parallaxY, isMobile, reducedMotion }) => {
+  const frameRef = useRef(null);
+  const [hovered, setHovered] = useState(false);
+  const [spotlightPos, setSpotlightPos] = useState({ x: 50, y: 50 });
+
+  const rotateX = useMotionValue(0);
+  const rotateY = useMotionValue(0);
+  const smoothRX = useSpring(rotateX, { stiffness: 90, damping: 20 });
+  const smoothRY = useSpring(rotateY, { stiffness: 90, damping: 20 });
+
+  const handleMouseMove = (e) => {
+    if (isMobile || reducedMotion || !frameRef.current) return;
+    const rect = frameRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setSpotlightPos({ x: x * 100, y: y * 100 });
+    // Gentle 3D tilt max 5 degrees
+    rotateX.set((y - 0.5) * -10);
+    rotateY.set((x - 0.5) * 10);
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    rotateX.set(0);
+    rotateY.set(0);
+  };
+
   return (
-    <a
-      href={disabled ? undefined : href}
-      target={disabled ? undefined : "_blank"}
-      rel="noopener noreferrer"
-      onMouseEnter={() => setOver(true)}
-      onMouseLeave={() => setOver(false)}
+    <motion.div
+      ref={frameRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={handleMouseLeave}
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        fontSize: "11.5px",
-        fontFamily: "'Space Grotesk', sans-serif",
-        fontWeight: "600",
-        letterSpacing: "0.05em",
-        color: disabled ? "rgba(255,255,255,0.2)" : over ? hoverColor : color,
-        textDecoration: "none",
-        padding: "5px 14px",
-        borderRadius: "7px",
-        border: `1px solid ${
-          disabled ? "rgba(255,255,255,0.06)" : over ? hoverColor : "rgba(255,255,255,0.12)"
-        }`,
-        background: over && !disabled ? `${hoverColor}14` : "transparent",
-        transition: "all 0.25s ease",
-        cursor: disabled ? "not-allowed" : "pointer",
-        pointerEvents: disabled ? "none" : "auto",
+        rotateX: isMobile || reducedMotion ? 0 : smoothRX,
+        rotateY: isMobile || reducedMotion ? 0 : smoothRY,
+        transformStyle: "preserve-3d",
       }}
+      className="relative rounded-2xl overflow-hidden glass-effect border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.6)] group w-full aspect-[16/10] max-w-2xl mx-auto"
     >
-      {children}
-    </a>
+      {/* Scroll parallax inside frame */}
+      <motion.div
+        style={{
+          y: isMobile || reducedMotion ? 0 : parallaxY,
+          scale: 1.16,
+        }}
+        className="w-full h-full will-change-transform"
+      >
+        <img
+          src={project.image}
+          alt={project.title}
+          width="1200"
+          height="750"
+          loading="lazy"
+          className="w-full h-full object-cover object-center pointer-events-none"
+        />
+      </motion.div>
+
+      {/* Spotlight sheen on hover */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+        style={{
+          opacity: hovered && !isMobile ? 1 : 0,
+          background: `radial-gradient(450px circle at ${spotlightPos.x}% ${spotlightPos.y}%, rgba(255,255,255,0.18), transparent 60%)`,
+        }}
+      />
+    </motion.div>
   );
 };
 
-/* ─── One project row — its own image sits beside its own content ─── */
-const ProjectRow = ({ project, index, total }) => {
-  const isLive = project.live !== "#";
-  const reversed = index % 2 === 1; // alternate image left/right
-  const [swinging, setSwinging] = useState(false);
-  const swingTimeout = useRef(null);
+/* ── Individual Project Scene (Full-viewport sticky card) ── */
+const ProjectScene = ({
+  project,
+  index,
+  total,
+  isMobile,
+  reducedMotion,
+}) => {
+  const containerRef = useRef(null);
+  const reversed = index % 2 === 1; // Alternate left/right
 
-  // Hover-triggered pendulum swing + glow, local to THIS project's own image.
-  // Double rAF forces the class off then back on so re-hovering restarts it.
-  const handleEnter = useCallback(() => {
-    setSwinging(false);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setSwinging(true));
-    });
-    clearTimeout(swingTimeout.current);
-    swingTimeout.current = setTimeout(() => setSwinging(false), 950);
-  }, []);
+  // Scroll tracking for entering into view
+  const { scrollYProgress: enterProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "start start"],
+  });
 
-  useEffect(() => () => clearTimeout(swingTimeout.current), []);
+  // Scroll tracking for exiting as the next card stacks over
+  const { scrollYProgress: exitProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
+
+  const springConfig = { stiffness: 70, damping: 20 };
+
+  // Convergence from sides
+  const imageRawX = useTransform(
+    enterProgress,
+    [0, 1],
+    [reversed ? 160 : -160, 0]
+  );
+  const textRawX = useTransform(
+    enterProgress,
+    [0, 1],
+    [reversed ? -160 : 160, 0]
+  );
+  const imageX = useSpring(imageRawX, springConfig);
+  const textX = useSpring(textRawX, springConfig);
+
+  const rawOpacity = useTransform(enterProgress, [0, 0.7], [0, 1]);
+  const enterOpacity = useSpring(rawOpacity, springConfig);
+
+  const rawScale = useTransform(enterProgress, [0, 1], [0.94, 1]);
+  const enterScale = useSpring(rawScale, springConfig);
+
+  // Parallax translation inside the image frame (+-8%)
+  const parallaxY = useTransform(enterProgress, [0, 1], ["-8%", "8%"]);
+
+  // Stacking exit: previous card scales down to 0.92 and dims
+  const exitScale = useTransform(exitProgress, [0, 1], [1, 0.92]);
+  const exitOpacity = useTransform(exitProgress, [0, 1], [1, 0.35]);
+
+  const hasGithub = project.github && project.github !== "#";
+  const hasLive = project.live && project.live !== "#";
 
   return (
     <div
-      onMouseEnter={handleEnter}
-      className="project-row"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "3.5rem",
-        alignItems: "center",
-        padding: "3.5rem 0",
-        borderTop: index === 0 ? "none" : "1px solid rgba(255,255,255,0.08)",
-        cursor: "default",
-      }}
+      ref={containerRef}
+      className={isMobile ? "relative min-h-screen py-16" : "relative h-[120vh]"}
     >
-      {/* This project's own image */}
       <div
-        className={`sticky-frame${swinging ? " swing" : ""}`}
-        style={{
-          order: reversed ? 2 : 1,
-          position: "sticky",
-          top: "6rem",
-          borderRadius: "16px",
-          overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.08)",
-          aspectRatio: "4 / 3",
-          boxShadow: "0 30px 70px rgba(0,0,0,0.5)",
-        }}
+        className={
+          isMobile
+            ? "relative"
+            : "sticky top-0 h-screen flex items-center justify-center overflow-hidden"
+        }
       >
-                <img
-          src={project.image}
-          alt={project.title}
-          draggable={false}
+        <motion.div
+          style={
+            reducedMotion
+              ? { opacity: enterOpacity }
+              : isMobile
+              ? { opacity: enterOpacity }
+              : {
+                  scale: index === total - 1 ? enterScale : exitScale,
+                  opacity: index === total - 1 ? enterOpacity : exitOpacity,
+                }
+          }
+          className="w-full max-w-7xl mx-auto px-6 md:px-12 py-10 rounded-3xl"
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: project.imagePosition || "center",
-            transform: `scale(${project.imageZoom || 1})`,
-            display: "block",
-          }}
-        />
-      </div>
-
-      {/* This project's own content */}
-      <div style={{ order: reversed ? 1 : 2 }}>
-        <div
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: "11px",
-            letterSpacing: "0.18em",
-            color: "#00f5ff",
-            marginBottom: "0.9rem",
+            background: "radial-gradient(ellipse at center, rgba(15,15,24,0.85) 0%, rgba(7,7,12,0.95) 100%)",
           }}
         >
-          {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-        </div>
-
-        <h3
-          style={{
-            fontSize: "clamp(1.6rem, 3vw, 2.1rem)",
-            fontWeight: "700",
-            fontFamily: "'Space Grotesk', sans-serif",
-            color: "white",
-            marginBottom: "1rem",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {project.title}
-        </h3>
-
-        <p
-          style={{
-            color: "#9ca3af",
-            fontSize: "0.95rem",
-            lineHeight: "1.75",
-            maxWidth: "42ch",
-            marginBottom: "1.4rem",
-          }}
-        >
-          {project.description}
-        </p>
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.6rem" }}>
-          {project.tech.map((t, i) => (
-            <span
-              key={i}
-              style={{
-                fontSize: "10px",
-                fontFamily: "'Space Grotesk', sans-serif",
-                background: "rgba(0,245,255,0.07)",
-                color: "#00f5ff",
-                padding: "4px 11px",
-                borderRadius: "5px",
-                border: "1px solid rgba(0,245,255,0.18)",
-                letterSpacing: "0.05em",
-              }}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+            {/* Image Scene Box */}
+            <motion.div
+              style={
+                reducedMotion || isMobile
+                  ? {}
+                  : { x: imageX, opacity: enterOpacity, scale: enterScale }
+              }
+              className={`w-full lg:col-span-7 ${
+                reversed ? "lg:order-2" : "lg:order-1"
+              }`}
             >
-              {t}
-            </span>
-          ))}
-        </div>
+              <ImageFrame
+                project={project}
+                parallaxY={parallaxY}
+                isMobile={isMobile}
+                reducedMotion={reducedMotion}
+              />
+            </motion.div>
 
-        <div style={{ display: "flex", gap: "0.9rem" }}>
-          <GhostBtn href={project.github} color="#9ca3af" hoverColor="#00f5ff">
-            <FaGithub style={{ fontSize: "13px" }} />
-            GitHub
-          </GhostBtn>
-          <GhostBtn href={project.live} color="#9ca3af" hoverColor="#7c3aed" disabled={!isLive}>
-            <FaExternalLinkAlt style={{ fontSize: "11px" }} />
-            Live Demo
-          </GhostBtn>
-        </div>
+            {/* Text Scene Box */}
+            <motion.div
+              style={
+                reducedMotion || isMobile
+                  ? {}
+                  : { x: textX, opacity: enterOpacity, scale: enterScale }
+              }
+              className={`flex flex-col gap-4 lg:col-span-5 ${
+                reversed ? "lg:order-1" : "lg:order-2"
+              }`}
+            >
+              {/* Subtle continuous drift on arrived elements */}
+              <motion.div
+                animate={
+                  reducedMotion
+                    ? {}
+                    : {
+                        y: [0, -6, 0],
+                      }
+                }
+                transition={{
+                  duration: 7 + (index % 3),
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="flex flex-col gap-4"
+              >
+                {/* Numbering */}
+                <div className="flex items-center gap-3">
+                  <span
+                    className="font-space text-xs tracking-[0.25em] uppercase font-semibold"
+                    style={{ color: "var(--color-violet)" }}
+                  >
+                    {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+                  </span>
+                  <div
+                    className="h-[1px] w-12"
+                    style={{ background: "var(--color-line)" }}
+                  />
+                </div>
+
+                {/* Title */}
+                <h3 className="font-syne font-bold text-3xl sm:text-4xl text-white tracking-tight leading-tight">
+                  {project.title}
+                </h3>
+
+                {/* Description */}
+                <p
+                  className="font-inter text-sm sm:text-base leading-relaxed font-light"
+                  style={{ color: "var(--color-muted)" }}
+                >
+                  {project.description}
+                </p>
+
+                {/* Tech Chips */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {project.tech.map((t, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1 rounded-md text-[11px] font-space tracking-wider uppercase font-medium glass-effect"
+                      style={{
+                        color: "var(--color-text)",
+                        borderColor: "var(--color-line)",
+                      }}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Buttons (rendered ONLY if not '#') */}
+                {(hasGithub || hasLive) && (
+                  <div className="flex flex-wrap gap-4 pt-4">
+                    {hasLive && (
+                      <a
+                        href={project.live}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-syne font-bold text-xs tracking-wider uppercase transition-all duration-300 hover:scale-105"
+                        style={{
+                          background: "var(--color-amber)",
+                          color: "var(--color-bg)",
+                        }}
+                      >
+                        <FaExternalLinkAlt className="text-[10px]" />
+                        Live Demo
+                      </a>
+                    )}
+                    {hasGithub && (
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-syne font-bold text-xs tracking-wider uppercase glass-effect hover:border-[var(--color-violet)] hover:text-white transition-all duration-300 hover:scale-105"
+                        style={{ color: "var(--color-text)" }}
+                      >
+                        <FaGithub className="text-sm" />
+                        GitHub
+                      </a>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
 };
 
-/* ─── Main Projects section ─── */
+/* ── Main Projects Section ── */
 const Projects = () => {
+  const headerRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const handler = (e) => setReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // Header Scene convergence
+  const { scrollYProgress: headerProgress } = useScroll({
+    target: headerRef,
+    offset: ["start end", "center center"],
+  });
+
+  const springConfig = { stiffness: 70, damping: 20 };
+  const headerLeftX = useSpring(
+    useTransform(headerProgress, [0, 1], [-160, 0]),
+    springConfig
+  );
+  const headerRightX = useSpring(
+    useTransform(headerProgress, [0, 1], [160, 0]),
+    springConfig
+  );
+  const headerOpacity = useSpring(
+    useTransform(headerProgress, [0, 0.7], [0, 1]),
+    springConfig
+  );
+  const headerScale = useSpring(
+    useTransform(headerProgress, [0, 1], [0.94, 1]),
+    springConfig
+  );
+
   return (
-    <>
-      <style>{`
-        @keyframes pendulumSwing {
-          0%   { transform: rotate(-9deg)  scale(0.96); }
-          25%  { transform: rotate(6deg)   scale(1.025); }
-          45%  { transform: rotate(-4deg)  scale(0.995); }
-          65%  { transform: rotate(2.2deg) scale(1.008); }
-          85%  { transform: rotate(-1deg)  scale(0.999); }
-          100% { transform: rotate(0deg)   scale(1); }
-        }
-        @keyframes glowPulse {
-          0%   { box-shadow: 0 30px 70px rgba(0,0,0,0.5), 0 0 0 rgba(0,245,255,0); }
-          40%  { box-shadow: 0 30px 70px rgba(0,0,0,0.5), 0 0 70px rgba(0,245,255,0.55), 0 0 32px rgba(124,58,237,0.4); }
-          100% { box-shadow: 0 30px 70px rgba(0,0,0,0.5), 0 0 28px rgba(0,245,255,0.26); }
-        }
-        @keyframes sheen {
-          0%   { background-position: -60% -60%; opacity: 1; }
-          100% { background-position: 130% 130%; opacity: 0; }
-        }
-        .sticky-frame { transform-origin: 50% 0%; position: sticky; }
-        .sticky-frame::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          z-index: 4;
-          pointer-events: none;
-          background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.16) 47%, transparent 62%);
-          background-size: 250% 250%;
-          background-position: -60% -60%;
-          opacity: 0;
-        }
-        .sticky-frame.swing {
-          animation: pendulumSwing 0.95s cubic-bezier(.32,1.6,.55,1) both,
-                     glowPulse 0.95s ease both;
-        }
-        .sticky-frame.swing::before {
-          opacity: 1;
-          animation: sheen 0.95s ease;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .sticky-frame.swing { animation: none !important; }
-          .sticky-frame.swing::before { display: none; }
-        }
-        @media (max-width: 860px) {
-          .project-row { grid-template-columns: 1fr !important; gap: 1.5rem !important; }
-          .project-row .sticky-frame { order: 1 !important; position: relative !important; top: 0 !important; }
-          .project-row > div:last-child { order: 2 !important; }
-        }
-      `}</style>
-
-      <section id="projects" style={{ padding: "6rem 0", position: "relative", zIndex: 10 }}>
-        {/* Heading — unchanged */}
-        <div
-          style={{
-            marginBottom: "1rem",
-            padding: "0 3rem",
-            maxWidth: "80rem",
-            margin: "0 auto 2.5rem auto",
-            display: "flex",
-            alignItems: "center",
-            gap: "1.5rem",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              fontWeight: "700",
-              fontFamily: "'Space Grotesk', sans-serif",
-              textTransform: "uppercase",
-              whiteSpace: "nowrap",
-              color: "white",
-            }}
+    <section id="projects" className="relative z-10 py-20">
+      {/* Section Header Scene */}
+      <div ref={headerRef} className="max-w-7xl mx-auto px-6 md:px-12 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5">
+          {/* Enters from left */}
+          <motion.div
+            style={
+              reducedMotion || isMobile
+                ? { opacity: headerOpacity }
+                : { x: headerLeftX, opacity: headerOpacity, scale: headerScale }
+            }
+            className="flex items-center gap-6"
           >
-            Selected Works
-          </h2>
-          <div
-            style={{
-              height: "1px",
-              flexGrow: 1,
-              background: "linear-gradient(to right, rgba(124,58,237,0.5), transparent)",
-            }}
+            <h2 className="font-syne font-extrabold text-4xl sm:text-5xl md:text-6xl uppercase tracking-tight text-white">
+              Selected <span className="text-gradient">Works</span>
+            </h2>
+            <div
+              className="hidden sm:block h-[1px] w-24 md:w-36"
+              style={{
+                background: "linear-gradient(to right, var(--color-violet), transparent)",
+              }}
+            />
+          </motion.div>
+
+          {/* Enters from right */}
+          <motion.div
+            style={
+              reducedMotion || isMobile
+                ? { opacity: headerOpacity }
+                : { x: headerRightX, opacity: headerOpacity, scale: headerScale }
+            }
+            className="flex items-center gap-2 text-xs font-space tracking-[0.2em] uppercase"
+            style={{ color: "var(--color-muted)" }}
+          >
+            <span style={{ color: "var(--color-violet)" }}>06</span>
+            <span>FEATURED PRODUCTIONS</span>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Cinematic Sticky Stack Scenes */}
+      <div className="relative">
+        {projectsData.map((project, index) => (
+          <ProjectScene
+            key={project.title}
+            project={project}
+            index={index}
+            total={projectsData.length}
+            isMobile={isMobile}
+            reducedMotion={reducedMotion}
           />
-        </div>
-
-        {/* Hint pill */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "2.5rem" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "6px 18px",
-              borderRadius: "100px",
-              background: "rgba(0,245,255,0.05)",
-              border: "1px solid rgba(0,245,255,0.15)",
-              color: "#4b5563",
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: "11px",
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-            }}
-          >
-            <span style={{ color: "#00f5ff" }}>↕</span>
-            Scroll to Explore
-            <span style={{ width: "1px", height: "12px", background: "rgba(255,255,255,0.12)" }} />
-            <span style={{ color: "#00f5ff" }}>✧</span>
-            Hover to Preview
-          </div>
-        </div>
-
-        {/* Each project — its own image beside its own content */}
-        <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 3rem" }}>
-          {projectsData.map((project, i) => (
-            <ProjectRow key={i} project={project} index={i} total={projectsData.length} />
-          ))}
-        </div>
-      </section>
-    </>
+        ))}
+      </div>
+    </section>
   );
 };
 
