@@ -1,4 +1,6 @@
+import GhostFibers from "./GhostFibers";
 import { useRef, useEffect, useState } from "react";
+
 import {
   motion,
   useScroll,
@@ -91,8 +93,10 @@ const Hero = () => {
   const firstX = useTransform(scrollYProgress, [0.15, 0.6], [0, -200]);
   const lastX = useTransform(scrollYProgress, [0.15, 0.6], [0, 200]);
   const lastOp = useTransform(scrollYProgress, [0.15, 0.5], [1, 0]);
-  const photoScale = useTransform(scrollYProgress, [0.2, 0.7], [1, 1.15]);
-  const photoOp = useTransform(scrollYProgress, [0.5, 0.8], [1, 0]);
+  // const photoScale = useTransform(scrollYProgress, [0.2, 0.7], [1, 1.15]);
+  // const photoOp = useTransform(scrollYProgress, [0.5, 0.8], [1, 0]);
+  const photoScale = useTransform(scrollYProgress, [0.2, 0.7], [1, 1.05]);
+  const photoOp = useTransform(scrollYProgress, [0.7, 0.95], [1, 0]);
   const scrollHintOp = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
   const contentOp = useTransform(scrollYProgress, [0.45, 0.7], [1, 0]);
 
@@ -134,9 +138,19 @@ const Hero = () => {
         className={isMobile ? "relative" : "sticky top-0"}
         style={{ height: isMobile ? "auto" : "100vh" }}
       >
+        <div className="absolute inset-0 z-0 hidden md:block pointer-events-none">
+          <GhostFibers
+            glowColor="#8b5cf6"
+            lineColor="#dfd1fc"
+            secondaryColor="#6f4ac5"
+            fiberStyle="dots"
+            hoverEffect="focus"
+            intro
+          />
+        </div>
+
         <div className="min-h-screen flex items-center pt-20 pb-8 px-6 md:px-12 overflow-hidden">
           <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-center justify-between gap-12 z-10">
-
             {/* ── LEFT: Text Content ── */}
             <motion.div
               className="flex flex-col items-start flex-1"
@@ -146,7 +160,11 @@ const Hero = () => {
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                transition={{
+                  duration: 0.8,
+                  delay: 0.5,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 className="mb-4"
               >
                 <span
@@ -212,7 +230,11 @@ const Hero = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 1.2, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{
+                    duration: 0.8,
+                    delay: 1.2,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
                   className="mt-3"
                 >
                   <FloatWrap y={4} duration={8}>
@@ -236,15 +258,20 @@ const Hero = () => {
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.4, ease: [0.22, 1, 0.36, 1] }}
+                transition={{
+                  duration: 0.8,
+                  delay: 1.4,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 className="mt-8 max-w-xl"
               >
                 <p
                   className="text-lg md:text-xl font-inter font-light"
                   style={{ color: "var(--color-muted)" }}
                 >
-                  Crafting high-performance web apps with modern technologies and AI-powered tools.
-                  Turning ideas into scalable, intelligent, and impactful digital experiences.
+                  Crafting high-performance web apps with modern technologies
+                  and AI-powered tools. Turning ideas into scalable,
+                  intelligent, and impactful digital experiences.
                 </p>
               </motion.div>
 
@@ -252,7 +279,11 @@ const Hero = () => {
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
+                transition={{
+                  duration: 0.8,
+                  delay: 1.6,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 className="mt-12 flex flex-wrap gap-5"
               >
                 <a
@@ -260,14 +291,14 @@ const Hero = () => {
                   onClick={scrollToProjects}
                   className="group relative px-8 py-4 font-syne font-bold uppercase tracking-wider overflow-hidden hover:scale-105 transition-transform rounded-lg"
                   style={{
-                    background: "var(--color-amber)",
-                    color: "var(--color-bg)",
+                    background: "linear-gradient(135deg, #8b5cf6, #ffb347)",
+                    color: "#ffffff",
                   }}
                 >
                   <span className="relative z-10">Explore My Work</span>
                 </a>
                 <a
-                  href="/Aarush_Resume.pdf"
+                  href="/Resume_Aarush.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-8 py-4 font-syne font-bold uppercase tracking-wider hover:scale-105 transition-all rounded-lg glass-effect"
@@ -280,11 +311,19 @@ const Hero = () => {
 
             {/* ── RIGHT: Photo ── */}
             <motion.div
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.9, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="flex-shrink-0 hidden md:flex flex-col items-center gap-4"
-              style={isMobile ? {} : { opacity: photoOp }}
+              // initial={{ opacity: 0, x: 60 }}
+              // animate={{ opacity: 1, x: 0 }}
+              // transition={{
+              //   duration: 0.9,
+              //   delay: 0.8,
+              //   ease: [0.22, 1, 0.36, 1],
+              // }}
+              // className="flex-shrink-0 hidden md:flex flex-col items-center gap-4"
+              // style={isMobile ? {} : { opacity: photoOp }}
+              initial={{ x: 60 }}
+  animate={{ x: 0 }}
+  transition={{ duration: 0.9, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
+  className="relative z-20 flex-shrink-0 hidden md:flex flex-col items-center gap-4"
             >
               {/* Photo frame with mouse-parallax tilt */}
               <motion.div
@@ -333,6 +372,7 @@ const Hero = () => {
                     height: "100%",
                     objectFit: "cover",
                     objectPosition: "top",
+                    filter: "brightness(1.15) contrast(1.05)",
                     display: "block",
                     zIndex: 2,
                   }}
@@ -343,7 +383,8 @@ const Hero = () => {
                   style={{
                     position: "absolute",
                     inset: 0,
-                    background: "linear-gradient(160deg, var(--color-surface) 0%, var(--color-bg) 100%)",
+                    background:
+                      "linear-gradient(160deg, var(--color-surface) 0%, var(--color-bg) 100%)",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -357,7 +398,8 @@ const Hero = () => {
                       width: "100px",
                       height: "100px",
                       borderRadius: "50%",
-                      background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(255,179,71,0.15))",
+                      background:
+                        "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(255,179,71,0.15))",
                       border: "2px dashed rgba(139,92,246,0.3)",
                       display: "flex",
                       alignItems: "center",
@@ -378,7 +420,8 @@ const Hero = () => {
                     right: 0,
                     height: "120px",
                     zIndex: 3,
-                    background: "linear-gradient(to top, var(--color-bg), transparent)",
+                    background:
+                      "linear-gradient(to top, var(--color-bg), transparent)",
                     pointerEvents: "none",
                   }}
                 />
@@ -409,7 +452,6 @@ const Hero = () => {
                 </motion.div>
               </FloatWrap>
             </motion.div>
-
           </div>
         </div>
 
@@ -431,7 +473,10 @@ const Hero = () => {
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             className="w-[1px] h-12"
-            style={{ background: "linear-gradient(to bottom, var(--color-muted), transparent)" }}
+            style={{
+              background:
+                "linear-gradient(to bottom, var(--color-muted), transparent)",
+            }}
           />
         </motion.div>
       </div>

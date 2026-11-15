@@ -14,7 +14,7 @@ import useLenis from "./lib/useLenis";
 import "lenis/dist/lenis.css";
 
 function App() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   useLenis();
 
   const onLoaderComplete = useCallback(() => setLoading(false), []);
@@ -28,7 +28,7 @@ function App() {
       <BackgroundLayer />
 
       <div
-        className="relative min-h-screen overflow-hidden"
+        className="relative min-h-screen overflow-x-clip"
         style={{
           background: "var(--color-bg)",
           color: "var(--color-text)",
