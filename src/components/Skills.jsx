@@ -192,6 +192,7 @@ const Skills = () => {
 
   const scaleRaw = useTransform(scrollYProgress, [0, 1], [0.94, 1]);
   const scale = useSpring(scaleRaw, springConfig);
+  const mobileY = useTransform(scrollYProgress, [0, 1], [40, 0]);
 
   return (
     <section
@@ -208,7 +209,7 @@ const Skills = () => {
               reducedMotion
                 ? { opacity }
                 : isMobile
-                ? { opacity, y: useTransform(scrollYProgress, [0, 1], [40, 0]) }
+                ? { opacity, y: mobileY }                              
                 : { x: leftX, opacity, scale }
             }
             className="flex items-center gap-6"

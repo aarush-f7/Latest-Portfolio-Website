@@ -249,7 +249,7 @@ const Hero = () => {
                     className="font-space text-sm tracking-[0.2em] uppercase mt-1"
                     style={{ color: "var(--color-muted)" }}
                   >
-                    MERN Stack Developer
+                    Software Developer and Engineer | React, Next.js, Node.js, AI/ML
                   </div>
                 </motion.div>
               </div>

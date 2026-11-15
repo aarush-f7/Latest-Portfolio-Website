@@ -114,6 +114,7 @@ const JourneyScene = ({
     [-35 - (index % 3) * 15, 35 + (index % 3) * 15]
   );
 
+  const mobileY = useTransform(scrollYProgress, [0, 1], [40, 0]);
   const isCurrent = item.date.toLowerCase() === "currently";
 
   return (
@@ -149,7 +150,7 @@ const JourneyScene = ({
           reducedMotion
             ? { opacity }
             : isMobile
-            ? { opacity, y: useTransform(scrollYProgress, [0, 1], [40, 0]) }
+            ? { opacity, y: mobileY }
             : { x, opacity, scale }
         }
         className="relative w-full max-w-xl group"
